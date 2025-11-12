@@ -37,6 +37,12 @@ jobs:
           docker build -t $ECR_REPOSITORY:${{ github.sha }} .
           docker push $ECR_REPOSITORY:${{ github.sha }}
           echo "IMAGE_URI=$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
+          
+      # --- Setup .NET Runtime (Fix for libssl issue) ---
+      - name: Setup .NET runtime
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
 
       # --- Install Octopus CLI ---
       - name: Install Octopus CLI
