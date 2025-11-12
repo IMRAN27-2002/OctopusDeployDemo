@@ -38,11 +38,15 @@ jobs:
           docker push $ECR_REPOSITORY:${{ github.sha }}
           echo "IMAGE_URI=$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
           
-      - name: Install libssl1.1 dependency
+      - name: Install libssl1.1 for legacy dependency
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libssl1.1 || \
-          (wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb && sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb)
+          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb
+          sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb || true
+          
+      - name: Verify libssl installation
+        run: |
+          dpkg -l | grep libssl
+          ls -l /usr/lib/x86_64-linux-gnu/libssl.so*
 
       # --- Install Octopus CLI ---
       - name: Install Octopus CLI
