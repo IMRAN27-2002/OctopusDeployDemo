@@ -46,32 +46,59 @@ jobs:
       - name: Set OpenSSL config path
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
-
-      # --- Install Octopus CLI ---
-      - name: Install Octopus CLI
-        uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
+      - name: Setup Octopus CLI
+        uses: OctopusDeploy/setup-octopus-cli@v3
         with:
-          version: latest
+         version: latest
       - name: Verify Octopus CLI Installation
         run: |
-          which octo
-          octo version
-
-      # --- Create & Deploy Release in Octopus ---
+         which octo
+         octo version
       - name: Create and Deploy Release in Octopus
         run: |
+          echo "Creating and deploying Octopus release..."
+    
           octo create-release \
-            --project "${{ vars.OCTOPUS_PROJECT }}" \
-            --version "${{ github.run_number }}" \
-            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
+           --project "${{ vars.OCTOPUS_PROJECT }}" \
+           --version "${{ github.run_number }}" \
+           --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
+           --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
+           --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
 
           octo deploy-release \
-            --project "${{ vars.OCTOPUS_PROJECT }}" \
-            --version "${{ github.run_number }}" \
-            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
-            --deployTo "Development"
+           --project "${{ vars.OCTOPUS_PROJECT }}" \
+           --version "${{ github.run_number }}" \
+           --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
+           --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
+           --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
+           --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
+           --deployTo "Development"
+   
+      # --- Install Octopus CLI ---
+      # - name: Install Octopus CLI
+      #   uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
+      #   with:
+      #     version: latest
+      # - name: Verify Octopus CLI Installation
+      #   run: |
+      #     which octo
+      #     octo version
+
+      # # --- Create & Deploy Release in Octopus ---
+      # - name: Create and Deploy Release in Octopus
+      #   run: |
+      #     octo create-release \
+      #       --project "${{ vars.OCTOPUS_PROJECT }}" \
+      #       --version "${{ github.run_number }}" \
+      #       --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
+      #       --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
+      #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
+
+      #     octo deploy-release \
+      #       --project "${{ vars.OCTOPUS_PROJECT }}" \
+      #       --version "${{ github.run_number }}" \
+      #       --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
+      #       --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
+      #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
+      #       --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
+      #       --deployTo "Development"
