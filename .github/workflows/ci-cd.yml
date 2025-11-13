@@ -47,29 +47,32 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
-      # --- FIX: Using Official Octopus Actions pinned to major version v3 ---
+      # --- FIX: Using Official Octopus Actions and environment variables for stability ---
 
       - name: Create Octopus Release
         uses: OctopusDeploy/create-release-action@v3 # Pinned to major version
         with:
           project: ${{ vars.OCTOPUS_PROJECT }}
-          # Use the workflow run number as the release number
           release_number: ${{ github.run_number }} 
-          # Use the git SHA as the package version to link the release to the ECR image tag
           package_version: ${{ github.sha }} 
           server: ${{ secrets.OCTOPUS_SERVER_URL }}
           api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
-          space: ${{ secrets.OCTOPUS_SERVER_SPACE }}
+          # Removed 'space' from 'with:' to pass it via environment variable instead
+        env:
+          # Pass Space as environment variable (Recommended for Octopus Actions)
+          OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }} 
+
 
       - name: Deploy Octopus Release to Development
-        # This action automatically finds the created release and handles deployment
         uses: OctopusDeploy/deploy-release-action@v3 # Pinned to major version
         with:
           project: ${{ vars.OCTOPUS_PROJECT }}
           release_number: ${{ github.run_number }}
-          environments: 'Development' # Deploy to the Development environment
-          # Pass the ECR Image URI as a deployment variable
+          environments: 'Development' 
           variables: "ECRImageURI=${{ env.IMAGE_URI }}" 
           server: ${{ secrets.OCTOPUS_SERVER_URL }}
           api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
-          space: ${{ secrets.OCTOPUS_SERVER_SPACE }}
+          # Removed 'space' from 'with:' to pass it via environment variable instead
+        env:
+          # Pass Space as environment variable (Recommended for Octopus Actions)
+          OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }}
