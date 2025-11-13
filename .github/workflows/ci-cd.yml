@@ -54,13 +54,16 @@ jobs:
         with:
           version: latest
 
-      # --- Create and Deploy Release in Octopus: Now using the explicit path to 'Octo' ---
+      # --- Create and Deploy Release in Octopus: FIX: Setting path via environment variable for guaranteed resolution ---
       - name: Create and Deploy Release in Octopus
+        # Injecting the path as an environment variable to ensure the runner resolves it correctly
+        env:
+          OCTO_CLI_PATH: ${{ steps.setup_cli.outputs.OctopusCli_Path }}
         run: |
           echo "Creating and deploying Octopus release..."
           
-          # Use the path output by the installation action to find the 'Octo' executable
-          OCTO_CLI=${{ steps.setup_cli.outputs.OctopusCli_Path }}/Octo
+          # Construct the full path using the environment variable
+          OCTO_CLI="$OCTO_CLI_PATH/Octo"
 
           $OCTO_CLI create-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
@@ -78,112 +81,3 @@ jobs:
             --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
             --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
             --deployTo "Development"
-
-
-
-# name: Build + Push to ECR + Deploy via Octopus
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   workflow_dispatch:
-
-# jobs:
-#   build-and-deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       # --- Checkout source code ---
-#       - name: Checkout
-#         uses: actions/checkout@v4
-
-#       # --- Configure AWS credentials ---
-#       - name: Configure AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           aws-region: ${{ vars.AWS_REGION }}
-
-#       # --- Login to Amazon ECR ---
-#       - name: Login to Amazon ECR
-#         id: login-ecr
-#         uses: aws-actions/amazon-ecr-login@v2
-
-#       # --- Build & Push Docker Image ---
-#       - name: Build and Push Docker Image
-#         env:
-#           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-#         run: |
-#           echo "Building Docker image for repo: $ECR_REPOSITORY"
-#           docker build -t $ECR_REPOSITORY:${{ github.sha }} .
-#           docker push $ECR_REPOSITORY:${{ github.sha }}
-#           echo "IMAGE_URI=$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
-          
-#       - name: Install OpenSSL and libssl3
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install -y openssl libssl-dev libssl3 ca-certificates
-      
-#       - name: Set OpenSSL config path
-#         run: |
-#           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
-#       - name: Setup Octopus CLI
-#         uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
-#         with:
-#          version: latest
-#       - name: Verify Octopus CLI Installation
-#         run: |
-#          which octo
-#          octo version
-#       - name: Create and Deploy Release in Octopus
-#         run: |
-#           echo "Creating and deploying Octopus release..."
-    
-#           octo create-release \
-#            --project "${{ vars.OCTOPUS_PROJECT }}" \
-#            --version "${{ github.run_number }}" \
-#            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-#            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-#            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-#            --packageVersion "${{ github.sha }}"
-
-#           octo deploy-release \
-#            --project "${{ vars.OCTOPUS_PROJECT }}" \
-#            --version "${{ github.run_number }}" \
-#            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-#            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-#            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-#            --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
-#            --deployTo "Development"
-   
-#       # --- Install Octopus CLI ---
-#       # - name: Install Octopus CLI
-#       #   uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
-#       #   with:
-#       #     version: latest
-#       # - name: Verify Octopus CLI Installation
-#       #   run: |
-#       #     which octo
-#       #     octo version
-
-#       # # --- Create & Deploy Release in Octopus ---
-#       # - name: Create and Deploy Release in Octopus
-#       #   run: |
-#       #     octo create-release \
-#       #       --project "${{ vars.OCTOPUS_PROJECT }}" \
-#       #       --version "${{ github.run_number }}" \
-#       #       --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-#       #       --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-#       #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-        
-
-#       #     octo deploy-release \
-#       #       --project "${{ vars.OCTOPUS_PROJECT }}" \
-#       #       --version "${{ github.run_number }}" \
-#       #       --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-#       #       --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-#       #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-#       #       --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
-#       #       --deployTo "Development"
