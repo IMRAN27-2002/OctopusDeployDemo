@@ -55,10 +55,10 @@ jobs:
         with:
           dotnet-version: '6.x' # Use a stable LTS version
 
-      # 2. Install Octopus CLI as a global tool
+      # 2. Install Octopus CLI as a global tool (CORRECTED PACKAGE NAME)
       - name: Install Octopus CLI via DotNet
         run: |
-          dotnet tool install --global Octopus.DotNet.Tools
+          dotnet tool install --global Octopus.DotNet.Cli
         shell: bash
 
       # 3. Add the DotNet tools directory to the PATH for subsequent steps
