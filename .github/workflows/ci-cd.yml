@@ -47,36 +47,36 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
-      # --- Setup Octopus CLI ---
-      - name: Setup Octopus CLI
-        id: setup_cli
-        uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
-        with:
-          version: latest
-
-      # --- FIX: Explicitly add Octopus CLI path to environment ---
-      # This step forces the installation path into the runner's environment variables.
-      - name: Force Octopus CLI to PATH
+      # --- FIX: Manually Install Octopus CLI to a reliable PATH location ---
+      # This step replaces the unreliable 'setup_cli' action and explicitly places 'octo' on the PATH.
+      - name: Install Octopus CLI Manually
         run: |
-          OCTO_PATH="${{ steps.setup_cli.outputs.OctopusCli_Path }}"
+          CLI_VERSION=2.19.1 # Using the version reported in your previous logs
           
-          if [ -n "$OCTO_PATH" ]; then
-            # GITHUB_PATH is the correct way to add a directory to the PATH for subsequent steps
-            echo "$OCTO_PATH" >> $GITHUB_PATH
-            echo "Successfully added Octopus CLI path to GITHUB_PATH: $OCTO_PATH"
-          else
-            echo "Error: OctopusCli_Path output variable was empty. Cannot guarantee 'octo' will be found."
-            # Fallback for old runner versions that might not support GITHUB_PATH well
-            # The next step will attempt to use 'octo' directly anyway.
-          fi
-        shell: bash
+          echo "Downloading Octopus CLI $CLI_VERSION..."
+          # Download the Linux/macOS package
+          curl -sSL "https://download.octopusdeploy.com/octopus-tools/$CLI_VERSION/OctopusTools.$CLI_VERSION.tar.gz" -o octo.tar.gz
 
-      # --- Create and Deploy Release in Octopus: Reverting to direct command call 'octo' ---
+          # Extract the contents to a temporary directory
+          mkdir /tmp/octo-cli
+          tar -xzf octo.tar.gz -C /tmp/octo-cli
+
+          # Move the executable binary 'Octo' to a standard system path location
+          # This guarantees 'octo' is on the PATH for the next step.
+          sudo mv /tmp/octo-cli/Octo /usr/local/bin/octo
+          
+          # Ensure it's executable
+          sudo chmod +x /usr/local/bin/octo
+
+          echo "Octo CLI installed successfully to /usr/local/bin/octo."
+        shell: bash
+        
+      # --- Create and Deploy Release in Octopus: Direct command call is now safe ---
       - name: Create and Deploy Release in Octopus
         run: |
           echo "Creating and deploying Octopus release..."
           
-          # Now relying on the manual PATH injection step to make 'octo' available.
+          # 'octo' is now guaranteed to be on the PATH from the previous manual installation step.
           octo create-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
