@@ -50,7 +50,7 @@ jobs:
 
       # --- Install Octopus CLI ---
       - name: Install Octopus CLI
-        uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
+        uses: OctopusDeploy/install-octopus-cli-action@v1.1.10
         with:
           version: latest
 
@@ -62,8 +62,7 @@ jobs:
             --version "${{ github.run_number }}" \
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
             --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --variable "ECRImageURI=${{ env.IMAGE_URI }}"
+            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
 
           octo deploy-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
@@ -71,4 +70,5 @@ jobs:
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
             --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
             --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --deployTo "Test"
+            --variable "ECRImageURI=${{ env.IMAGE_URI }}"
+            --deployTo "Development"
