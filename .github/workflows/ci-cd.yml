@@ -47,51 +47,29 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
-      # --- FIX: Reliable installation via .NET Global Tool ---
+      # --- FIX: Using Official Octopus Actions for stability ---
 
-      # 1. Setup .NET Core SDK (required for dotnet global tools)
-      - name: Setup .NET Core SDK
-        uses: actions/setup-dotnet@v4
+      - name: Create Octopus Release
+        uses: OctopusDeploy/create-release-action@v3.0.5
         with:
-          dotnet-version: '6.x' # Use a stable LTS version
+          project: ${{ vars.OCTOPUS_PROJECT }}
+          # Use the workflow run number as the release number
+          release_number: ${{ github.run_number }} 
+          # Use the git SHA as the package version to link the release to the ECR image tag
+          package_version: ${{ github.sha }} 
+          server: ${{ secrets.OCTOPUS_SERVER_URL }}
+          api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
+          space: ${{ secrets.OCTOPUS_SERVER_SPACE }}
 
-      # 2. Install Octopus CLI as a global tool (CORRECTED PACKAGE NAME)
-      - name: Install Octopus CLI via DotNet
-        run: |
-          dotnet tool install --global Octopus.DotNet.Cli
-        shell: bash
-
-      # 3. Add the DotNet tools directory to the PATH for subsequent steps
-      - name: Force DotNet Tools to PATH
-        run: |
-          # The global tools are reliably installed in ~/.dotnet/tools.
-          # We use $HOME (which expands to ~) to get the correct path.
-          DOTNET_TOOLS_PATH="$HOME/.dotnet/tools"
-          echo "$DOTNET_TOOLS_PATH" >> $GITHUB_PATH
-          echo "DotNet tools path added to GITHUB_PATH: $DOTNET_TOOLS_PATH"
-        shell: bash
-        
-      # --- Create and Deploy Release in Octopus: FINAL FIX: Explicit Path Call ---
-      - name: Create and Deploy Release in Octopus
-        run: |
-          echo "Creating and deploying Octopus release..."
-          
-          # Using the explicit, guaranteed path for the 'octo' executable.
-          OCTO_CLI="$HOME/.dotnet/tools/octo"
-
-          $OCTO_CLI create-release \
-            --project "${{ vars.OCTOPUS_PROJECT }}" \
-            --version "${{ github.run_number }}" \
-            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --packageVersion "${{ github.sha }}"
-
-          $OCTO_CLI deploy-release \
-            --project "${{ vars.OCTOPUS_PROJECT }}" \
-            --version "${{ github.run_number }}" \
-            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
-            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-            --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
-            --deployTo "Development"
+      - name: Deploy Octopus Release to Development
+        # This action automatically finds the created release and handles deployment
+        uses: OctopusDeploy/deploy-release-action@v3.0.5
+        with:
+          project: ${{ vars.OCTOPUS_PROJECT }}
+          release_number: ${{ github.run_number }}
+          environments: 'Development' # Deploy to the Development environment
+          # Pass the ECR Image URI as a deployment variable
+          variables: "ECRImageURI=${{ env.IMAGE_URI }}" 
+          server: ${{ secrets.OCTOPUS_SERVER_URL }}
+          api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
+          space: ${{ secrets.OCTOPUS_SERVER_SPACE }}
