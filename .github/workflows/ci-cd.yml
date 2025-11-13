@@ -71,13 +71,15 @@ jobs:
           echo "DotNet tools path added to GITHUB_PATH: $DOTNET_TOOLS_PATH"
         shell: bash
         
-      # --- Create and Deploy Release in Octopus: Direct command call is now safe ---
+      # --- Create and Deploy Release in Octopus: FINAL FIX: Explicit Path Call ---
       - name: Create and Deploy Release in Octopus
         run: |
           echo "Creating and deploying Octopus release..."
           
-          # 'octo' is now guaranteed to be on the PATH.
-          octo create-release \
+          # Using the explicit, guaranteed path for the 'octo' executable.
+          OCTO_CLI="$HOME/.dotnet/tools/octo"
+
+          $OCTO_CLI create-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
@@ -85,7 +87,7 @@ jobs:
             --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
             --packageVersion "${{ github.sha }}"
 
-          octo deploy-release \
+          $OCTO_CLI deploy-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
