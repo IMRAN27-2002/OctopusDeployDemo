@@ -52,6 +52,10 @@ jobs:
         uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
         with:
           version: latest
+      - name: Verify Octopus CLI Installation
+        run: |
+          which octo
+          octo version
 
       # --- Create & Deploy Release in Octopus ---
       - name: Create and Deploy Release in Octopus
@@ -69,5 +73,5 @@ jobs:
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
             --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
             --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
-            --variable "ECRImageURI=${{ env.IMAGE_URI }}"
+            --variable "ECRImageURI=${{ env.IMAGE_URI }}" \
             --deployTo "Development"
