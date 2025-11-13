@@ -64,8 +64,9 @@ jobs:
       # 3. Add the DotNet tools directory to the PATH for subsequent steps
       - name: Force DotNet Tools to PATH
         run: |
-          # Get the installation path for global tools
-          DOTNET_TOOLS_PATH=$(dotnet tool path)
+          # The global tools are reliably installed in ~/.dotnet/tools.
+          # We use $HOME (which expands to ~) to get the correct path.
+          DOTNET_TOOLS_PATH="$HOME/.dotnet/tools"
           echo "$DOTNET_TOOLS_PATH" >> $GITHUB_PATH
           echo "DotNet tools path added to GITHUB_PATH: $DOTNET_TOOLS_PATH"
         shell: bash
@@ -75,7 +76,7 @@ jobs:
         run: |
           echo "Creating and deploying Octopus release..."
           
-          # 'octo' is now guaranteed to be on the PATH via the dotnet global tool setup.
+          # 'octo' is now guaranteed to be on the PATH.
           octo create-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
