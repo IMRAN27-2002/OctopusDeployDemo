@@ -47,25 +47,37 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
-      # --- Setup Octopus CLI: Added 'id: setup_cli' to reference the output path ---
+      # --- Setup Octopus CLI ---
       - name: Setup Octopus CLI
         id: setup_cli
         uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
         with:
           version: latest
 
-      # --- Create and Deploy Release in Octopus: FIX: Setting path via environment variable for guaranteed resolution ---
+      # --- FIX: Explicitly add Octopus CLI path to environment ---
+      # This step forces the installation path into the runner's environment variables.
+      - name: Force Octopus CLI to PATH
+        run: |
+          OCTO_PATH="${{ steps.setup_cli.outputs.OctopusCli_Path }}"
+          
+          if [ -n "$OCTO_PATH" ]; then
+            # GITHUB_PATH is the correct way to add a directory to the PATH for subsequent steps
+            echo "$OCTO_PATH" >> $GITHUB_PATH
+            echo "Successfully added Octopus CLI path to GITHUB_PATH: $OCTO_PATH"
+          else
+            echo "Error: OctopusCli_Path output variable was empty. Cannot guarantee 'octo' will be found."
+            # Fallback for old runner versions that might not support GITHUB_PATH well
+            # The next step will attempt to use 'octo' directly anyway.
+          fi
+        shell: bash
+
+      # --- Create and Deploy Release in Octopus: Reverting to direct command call 'octo' ---
       - name: Create and Deploy Release in Octopus
-        # Injecting the path as an environment variable to ensure the runner resolves it correctly
-        env:
-          OCTO_CLI_PATH: ${{ steps.setup_cli.outputs.OctopusCli_Path }}
         run: |
           echo "Creating and deploying Octopus release..."
           
-          # Construct the full path using the environment variable
-          OCTO_CLI="$OCTO_CLI_PATH/Octo"
-
-          $OCTO_CLI create-release \
+          # Now relying on the manual PATH injection step to make 'octo' available.
+          octo create-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
@@ -73,7 +85,7 @@ jobs:
             --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
             --packageVersion "${{ github.sha }}"
 
-          $OCTO_CLI deploy-release \
+          octo deploy-release \
             --project "${{ vars.OCTOPUS_PROJECT }}" \
             --version "${{ github.run_number }}" \
             --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
