@@ -47,7 +47,7 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
       - name: Setup Octopus CLI
-        uses: OctopusDeploy/setup-octopus-cli@v3
+        uses: OctopusDeploy/install-octopus-cli-action@v3.0.0
         with:
          version: latest
       - name: Verify Octopus CLI Installation
@@ -63,7 +63,8 @@ jobs:
            --version "${{ github.run_number }}" \
            --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
            --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-           --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
+           --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
+           --packageVersion "${{ github.sha }}"
 
           octo deploy-release \
            --project "${{ vars.OCTOPUS_PROJECT }}" \
@@ -92,7 +93,8 @@ jobs:
       #       --version "${{ github.run_number }}" \
       #       --server "${{ secrets.OCTOPUS_SERVER_URL }}" \
       #       --apiKey "${{ secrets.OCTOPUS_SERVER_API_KEY }}" \
-      #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}"
+      #       --space "${{ secrets.OCTOPUS_SERVER_SPACE }}" \
+        
 
       #     octo deploy-release \
       #       --project "${{ vars.OCTOPUS_PROJECT }}" \
