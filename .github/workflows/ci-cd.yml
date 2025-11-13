@@ -47,23 +47,23 @@ jobs:
         run: |
           echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
 
-      # --- FIX: Manually Install Octopus CLI to a reliable PATH location ---
-      # This step replaces the unreliable 'setup_cli' action and explicitly places 'octo' on the PATH.
+      # --- FIX: Manually Install Octopus CLI using the latest permanent link ---
+      # This step bypasses the unreliable Octopus GitHub Action and uses a stable download link.
       - name: Install Octopus CLI Manually
         run: |
-          CLI_VERSION=2.19.1 # Using the version reported in your previous logs
+          OCTO_DOWNLOAD_URL="https://download.octopusdeploy.com/octopus-cli/latest/linux-x64/octo.cli.tar.gz"
           
-          echo "Downloading Octopus CLI $CLI_VERSION..."
-          # Download the Linux/macOS package
-          curl -sSL "https://download.octopusdeploy.com/octopus-tools/$CLI_VERSION/OctopusTools.$CLI_VERSION.tar.gz" -o octo.tar.gz
+          echo "Downloading Octopus CLI from $OCTO_DOWNLOAD_URL..."
+          # Download the CLI tarball
+          curl -sSL "$OCTO_DOWNLOAD_URL" -o octo.tar.gz
 
           # Extract the contents to a temporary directory
           mkdir /tmp/octo-cli
+          # The binary is named 'octo' inside the modern tarball, not 'Octo'
           tar -xzf octo.tar.gz -C /tmp/octo-cli
 
-          # Move the executable binary 'Octo' to a standard system path location
-          # This guarantees 'octo' is on the PATH for the next step.
-          sudo mv /tmp/octo-cli/Octo /usr/local/bin/octo
+          # Move the executable binary 'octo' to a standard system path location
+          sudo mv /tmp/octo-cli/octo /usr/local/bin/octo
           
           # Ensure it's executable
           sudo chmod +x /usr/local/bin/octo
