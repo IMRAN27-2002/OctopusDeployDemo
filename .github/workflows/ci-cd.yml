@@ -59,7 +59,9 @@ jobs:
           release_number: ${{ github.run_number }}
           server: ${{ secrets.OCTOPUS_SERVER_URL }}
           api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
-          additional_arguments: "--variable=GitSha:${{ github.sha }}"
+          packages: |
+            mywebapp:${{ github.sha }}
+          # additional_arguments: "--variable=GitSha:${{ github.sha }}"
         env:
           OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }}
 
