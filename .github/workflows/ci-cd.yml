@@ -11,78 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --- Checkout source code ---
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # --- Configure AWS credentials ---
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      # --- Login to Amazon ECR ---
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      # --- Build & Push Docker Image ---
-      - name: Build and Push Docker Image
-        env:
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        run: |
-          echo "Building Docker image for repo: $ECR_REPOSITORY"
-          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
-          docker push $ECR_REPOSITORY:${{ github.sha }}
-          echo "IMAGE_URI=$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
-          
-      - name: Install OpenSSL and libssl3
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openssl libssl-dev libssl3 ca-certificates
-          
-      - name: Set OpenSSL config path
-        run: |
-          echo "OPENSSL_CONF=/etc/ssl/openssl.cnf" >> $GITHUB_ENV
-
-      # --- FIX: Using Official Octopus Actions and environment variables for stability ---
-
-      - name: Create Octopus Release
-        uses: OctopusDeploy/create-release-action@v3 # Pinned to major version
-        with:
-          project: ${{ vars.OCTOPUS_PROJECT }}
-          release_number: ${{ github.run_number }} 
-          package_version: ${{ github.sha }} 
-          server: ${{ secrets.OCTOPUS_SERVER_URL }}
-          api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
-          package_id: "mywebapp"
-          version: "${{ github.sha }}"
-          # Removed 'space' from 'with:' to pass it via environment variable instead
-        env:
-          # Pass Space as environment variable (Recommended for Octopus Actions)
-          OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }} 
-
-
-      - name: Deploy Octopus Release to Development
-        uses: OctopusDeploy/deploy-release-action@v3 # Pinned to major version
-        with:
-          project: ${{ vars.OCTOPUS_PROJECT }}
-          release_number: ${{ github.run_number }}
-          environments: 'Development'name: Build + Push to ECR + Deploy via Octopus
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
       # --- Checkout source ---
       - name: Checkout
         uses: actions/checkout@v4
@@ -149,16 +77,4 @@ jobs:
           api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
           additional_arguments: "--variable=GitSha:${{ github.sha }}"
         env:
-          OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }}
-
-          version: "${{ github.sha }}"
-          additional_arguments: "--variable=GitSha:${{ github.sha }}"
-          # variables: |
-          #   #ECRImageURI=${{ env.IMAGE_URI }}
-          # variables: "ECRImageURI=${{ env.IMAGE_URI }}" 
-          server: ${{ secrets.OCTOPUS_SERVER_URL }}
-          api_key: ${{ secrets.OCTOPUS_SERVER_API_KEY }}
-          # Removed 'space' from 'with:' to pass it via environment variable instead
-        env:
-          # Pass Space as environment variable (Recommended for Octopus Actions)
           OCTOPUS_SPACE: ${{ secrets.OCTOPUS_SERVER_SPACE }}
